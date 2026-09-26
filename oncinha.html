@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Oncinha 🐆 — A Caçadora de Tigrinho</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        font-family: Arial, Helvetica, sans-serif;
+        background: radial-gradient(circle at top, #42155f 0%, #1b0c2c 45%, #08050d 100%);
+        color: white;
+        overflow: hidden; /* Evita rolagem da tela */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .app {
+        width: min(900px, 98vw);
+        height: 98vh;
+        height: 98dvh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      /* =========================
+         AVISO
+         ========================= */
+
+      .warning {
+        background: #17111f;
+        border: 1px solid #8d5caf;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.45);
+        max-height: 95vh;
+        overflow-y: auto;
+      }
+
+      .warning h1 {
+        margin-top: 0;
+        color: #ffd84d;
+        font-size: clamp(22px, 3.5vw, 36px);
+      }
+
+      .warning p {
+        color: #ddd5e5;
+        line-height: 1.5;
+        font-size: clamp(13px, 1.8vw, 16px);
+      }
+
+      .warning strong {
+        color: white;
+      }
+
+      .start-button {
+        border: 0;
+        padding: 12px 20px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #ffd84d, #ff9f1c);
+        color: #251000;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      /* =========================
+         JOGO
+         ========================= */
+
+      .game {
+        display: none;
+        height: 100%;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .game.visible {
+        display: flex;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(20, 12, 31, 0.95);
+        border: 1px solid #53346c;
+        border-radius: 12px;
+        padding: 8px 15px;
+        flex-shrink: 0;
+      }
+
+      .logo {
+        font-size: clamp(16px, 2.5vw, 20px);
+        font-weight: 900;
+        color: #ffd84d;
+      }
+
+      .balance {
+        text-align: right;
+      }
+
+      .balance small {
+        display: block;
+        color: #aaa0b3;
+        font-size: 11px;
+      }
+
+      .balance strong {
+        font-size: clamp(16px, 2.5vw, 20px);
+        color: #7dffb2;
+      }
+
+      .casino {
+        background: linear-gradient(180deg, #35104e, #190c26);
+        border: 2px solid #71418d;
+        border-radius: 18px;
+        padding: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        flex-grow: 1;
+        margin-top: 8px;
+        overflow: hidden;
+      }
+
+      .header-title {
+        text-align: center;
+      }
+
+      .title {
+        margin: 0;
+        font-size: clamp(20px, 4vw, 36px);
+        color: #ffd84d;
+        text-shadow: 0 2px 10px rgba(255, 190, 50, 0.35);
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #c7bacf;
+        margin: 2px 0 6px;
+        font-size: clamp(11px, 1.8vw, 14px);
+      }
+
+      /* =========================
+         9 SLOTS & LINHAS DE ERRO
+         ========================= */
+
+      .machine {
+        background: #08050d;
+        border: 2px solid #9a5bc0;
+        border-radius: 14px;
+        padding: 8px;
+        position: relative;
+      }
+
+      .slots {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        position: relative;
+      }
+
+      .slot {
+        height: min(11vh, 80px);
+        background: linear-gradient(145deg, #fff, #cfc8d5);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(28px, 5vw, 48px);
+        color: #18121d;
+        box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.25);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .slot.spinning {
+        filter: blur(3px);
+        transform: scale(0.97);
+      }
+
+      /* Destaque visual para combinações erradas */
+      .slot.missed::after {
+        content: '✕';
+        position: absolute;
+        color: rgba(255, 50, 50, 0.7);
+        font-size: clamp(32px, 6vw, 60px);
+        font-weight: bold;
+        pointer-events: none;
+      }
+
+      /* =========================
+         MULTIPLICADOR E CONTROLES
+         ========================= */
+
+      .multiplier-and-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 10px;
+        margin: 6px 0;
+      }
+
+      .multiplier {
+        text-align: center;
+      }
+
+      .multiplier-label {
+        color: #aaa0b3;
+        font-size: 10px;
+      }
+
+      .multiplier-value {
+        font-size: clamp(20px, 4vw, 32px);
+        font-weight: 900;
+        color: #ff6464;
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .spin {
+        padding: 10px 24px;
+        border: 0;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: clamp(14px, 2.5vw, 18px);
+        font-weight: 900;
+        background: linear-gradient(135deg, #ffda44, #ff9d00);
+        color: #2b1600;
+        box-shadow: 0 4px 12px rgba(255, 170, 30, 0.2);
+      }
+
+      .spin:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .fake-cost {
+        margin-top: 4px;
+        color: #aaa0b3;
+        font-size: 10px;
+      }
+
+      /* =========================
+         RESULTADO & STATS
+         ========================= */
+
+      .result {
+        background: rgba(0, 0, 0, 0.28);
+        border-radius: 8px;
+        padding: 6px;
+        text-align: center;
+      }
+
+      .result-main {
+        color: #ff7070;
+        font-size: clamp(14px, 2.5vw, 18px);
+        font-weight: bold;
+      }
+
+      .result-sub {
+        color: #aaa0b3;
+        font-size: 11px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        margin-top: 6px;
+      }
+
+      .stat {
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid #493152;
+        border-radius: 8px;
+        padding: 6px;
+        text-align: center;
+      }
+
+      .stat small {
+        display: block;
+        color: #aaa0b3;
+        font-size: 10px;
+      }
+
+      .stat strong {
+        font-size: clamp(12px, 2vw, 15px);
+      }
+
+      .negative {
+        color: #ff6868;
+      }
+
+      .loss-section {
+        margin-top: 6px;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 8px;
+        border-radius: 8px;
+      }
+
+      .loss-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+        color: #d7cedc;
+        font-size: 11px;
+      }
+
+      .progress {
+        height: 10px;
+        background: #302438;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #ffd84d, #ff3030);
+        transition: width 0.5s ease;
+      }
+
+      .message {
+        margin-top: 6px;
+        background: linear-gradient(135deg, #351326, #190d18);
+        border: 1px solid #a83b58;
+        border-radius: 10px;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .message-content {
+        flex-grow: 1;
+      }
+
+      .message h2 {
+        margin: 0;
+        color: #ff7777;
+        font-size: clamp(12px, 2vw, 14px);
+      }
+
+      .message p {
+        margin: 2px 0 0;
+        line-height: 1.2;
+        color: #ddd1d7;
+        font-size: clamp(10px, 1.5vw, 12px);
+      }
+
+      .reset {
+        border: 1px solid #795d82;
+        background: transparent;
+        color: white;
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: pointer;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 600px) {
+        .stats {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <!-- AVISO INICIAL -->
+      <section class="warning" id="warning">
+        <h1>Antes de jogar: isto é uma simulação.</h1>
+        <p>Este site não realiza apostas e não utiliza dinheiro real. O saldo mostrado aqui é completamente fictício.</p>
+        <p>Esta experiência foi criada com finalidade educativa: <strong>todas as rodadas terminam em prejuízo.</strong></p>
+        <p>Os multiplicadores abaixo não representam uma oportunidade de ganhar. Eles representam o tamanho da perda daquela rodada.</p>
+        <p>A ideia é visualizar uma situação simples: quanto mais dinheiro fictício você coloca na máquina, maior fica o prejuízo acumulado.</p>
+        <button class="start-button" onclick="startGame()">Entendi — iniciar simulação</button>
+      </section>
+
+      <!-- JOGO ONCINHA -->
+      <main class="game" id="game">
+        <div class="topbar">
+          <div class="logo">ONCINHA 🐆</div>
+          <div class="balance">
+            <small>Saldo fictício</small>
+            <strong id="balance">R$ 1.000,00</strong>
+          </div>
+        </div>
+
+        <section class="casino">
+          <div class="header-title">
+            <h1 class="title">ONCINHA 🐆</h1>
+            <div class="subtitle">"A caçadora de Tigrinho"</div>
+          </div>
+
+          <!-- 9 SLOTS -->
+          <div class="machine">
+            <div class="slots">
+              <div class="slot"><span id="slot0">🐆</span></div>
+              <div class="slot"><span id="slot1">💰</span></div>
+              <div class="slot"><span id="slot2">💎</span></div>
+              <div class="slot"><span id="slot3">🍒</span></div>
+              <div class="slot"><span id="slot4">7️⃣</span></div>
+              <div class="slot"><span id="slot5">🔔</span></div>
+              <div class="slot"><span id="slot6">⭐</span></div>
+              <div class="slot"><span id="slot7">🍋</span></div>
+              <div class="slot"><span id="slot8">🐆</span></div>
+            </div>
+          </div>
+
+          <!-- CONTROLES E MULTIPLICADOR -->
+          <div class="multiplier-and-controls">
+            <div class="multiplier">
+              <div class="multiplier-label">MULTIPLICADOR DE PERDA</div>
+              <div class="multiplier-value" id="multiplier">x1</div>
+            </div>
+            <div class="controls">
+              <button class="spin" id="spinButton" onclick="spin()">GIRAR — R$ 10</button>
+              <div class="fake-cost">Valor fictício.</div>
+            </div>
+          </div>
+
+          <!-- RESULTADO -->
+          <div class="result" id="result">
+            <div class="result-main">O resultado aparecerá aqui.</div>
+            <div class="result-sub">Nenhuma rodada foi realizada.</div>
+          </div>
+
+          <!-- ESTATÍSTICAS -->
+          <div class="stats">
+            <div class="stat"><small>Rodadas</small><strong id="rounds">0</strong></div>
+            <div class="stat"><small>Perda acumulada</small><strong class="negative" id="lost">R$ 0,00</strong></div>
+            <div class="stat"><small>Maior perda</small><strong class="negative" id="biggestLoss">R$ 0,00</strong></div>
+            <div class="stat"><small>Retorno</small><strong class="negative">R$ 0,00</strong></div>
+          </div>
+
+          <!-- BARRA DE PERDA -->
+          <div class="loss-section">
+            <div class="loss-header">
+              <span>Saldo destruído</span>
+              <span id="percentage">0%</span>
+            </div>
+            <div class="progress">
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+          </div>
+
+          <!-- MENSAGEM EDUCATIVA -->
+          <div class="message">
+            <div class="message-content">
+              <h2 id="messageTitle">A máquina não precisa que você ganhe.</h2>
+              <p id="messageText">Continue jogando para ver o que acontece com o saldo fictício.</p>
+            </div>
+            <button class="reset" onclick="resetGame()">Reiniciar</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const START_BALANCE = 1000;
+      const BASE_BET = 10;
+      const LOSS_MULTIPLIERS = [1, 1, 1, 2, 2, 3, 3, 5, 5, 10];
+      const symbols = ['🐆', '💰', '💎', '🍒', '7️⃣', '🔔', '⭐', '🍋'];
+
+      const messages = [
+        { title: 'Você perdeu novamente.', text: 'Parar agora é melhor do que tentar recuperar o perdido.' },
+        { title: 'A próxima rodada não devolve a anterior.', text: 'O dinheiro perdido continua perdido.' },
+        { title: 'Mais uma rodada, mais prejuízo.', text: 'Continuar jogando nunca recupera o saldo.' },
+        { title: 'Você está tentando recuperar o prejuízo.', text: 'Perseguir perdas coloca ainda mais dinheiro em risco.' },
+        { title: 'Quase não significa ganhou.', text: 'Combinações sem alinhamento completo são perdas totais.' },
+        { title: 'R$ 10 parecem pouco.', text: 'Mas várias pequenas perdas viram um valor enorme.' },
+        { title: 'Agora você perdeu mais rápido.', text: 'O multiplicador aumentou a perda desta rodada.' },
+        { title: 'O saldo não sabe que você quer recuperá-lo.', text: 'A rodada seguinte não fica mais fácil.' },
+        { title: 'Você já colocou dinheiro nisso.', text: 'Esse valor não volta por persistência.' },
+        { title: 'Esta rodada não foi diferente.', text: 'A caçada sempre termina em prejuízo para o apostador.' }
+      ];
+
+      let balance = START_BALANCE;
+      let rounds = 0;
+      let lost = 0;
+      let biggestLoss = 0;
+      let spinning = false;
+
+      function money(value) {
+        return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      }
+
+      function startGame() {
+        document.getElementById('warning').style.display = 'none';
+        document.getElementById('game').classList.add('visible');
+      }
+
+      function animateSlot(element, duration) {
+        return new Promise((resolve) => {
+          const parent = element.parentElement;
+          parent.classList.add('spinning');
+          parent.classList.remove('missed');
+
+          const interval = setInterval(() => {
+            element.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+          }, 70);
+
+          setTimeout(() => {
+            clearInterval(interval);
+            parent.classList.remove('spinning');
+            resolve();
+          }, duration);
+        });
+      }
+
+      async function spin() {
+        if (spinning) return;
+        if (balance < BASE_BET) {
+          endGame();
+          return;
+        }
+
+        spinning = true;
+        const button = document.getElementById('spinButton');
+        button.disabled = true;
+
+        document.getElementById('result').querySelector('.result-main').textContent = 'Girando...';
+        document.getElementById('result').querySelector('.result-sub').textContent = 'Analisando combinações...';
+
+        const multiplier = LOSS_MULTIPLIERS[Math.floor(Math.random() * LOSS_MULTIPLIERS.length)];
+        const loss = Math.min(BASE_BET * multiplier, balance);
+
+        const animations = [];
+        for (let i = 0; i < 9; i++) {
+          const slot = document.getElementById('slot' + i);
+          animations.push(animateSlot(slot, 500 + i * 80));
+        }
+
+        await Promise.all(animations);
+
+        // Gera sempre uma combinação que NÃO bate
+        const boards = [
+          ['🐆', '🍋', '💎', '🍒', '7️⃣', '🔔', '⭐', '💰', '🍋'],
+          ['💰', '🐆', '🍒', '🍋', '💎', '7️⃣', '🔔', '⭐', '💰'],
+          ['7️⃣', '💎', '🍋', '🔔', '🐆', '🍒', '💰', '7️⃣', '⭐']
+        ];
+        const finalBoard = boards[Math.floor(Math.random() * boards.length)];
+
+        for (let i = 0; i < 9; i++) {
+          document.getElementById('slot' + i).textContent = finalBoard[i];
+        }
+
+        // Exibe marcadores X nas combinações que não bateram
+        document.querySelectorAll('.slot').forEach((slot) => {
+          slot.classList.add('missed');
+        });
+
+        balance -= loss;
+        lost += loss;
+        rounds++;
+
+        if (loss > biggestLoss) biggestLoss = loss;
+
+        document.getElementById('multiplier').textContent = 'x' + multiplier;
+        updateInterface();
+
+        const message = messages[Math.floor(Math.random() * messages.length)];
+        document.getElementById('messageTitle').textContent = message.title;
+        document.getElementById('messageText').textContent = message.text;
+
+        document.getElementById('result').querySelector('.result-main').textContent = '− ' + money(loss);
+        document.getElementById('result').querySelector('.result-sub').textContent = 'Nenhuma linha combinou. Perda de ' + multiplier + 'x o valor base.';
+
+        spinning = false;
+        button.disabled = false;
+
+        if (balance <= 0) endGame();
+      }
+
+      function updateInterface() {
+        document.getElementById('balance').textContent = money(balance);
+        document.getElementById('rounds').textContent = rounds;
+        document.getElementById('lost').textContent = money(lost);
+        document.getElementById('biggestLoss').textContent = money(biggestLoss);
+
+        const percentage = Math.min(100, (lost / START_BALANCE) * 100);
+        document.getElementById('percentage').textContent = Math.round(percentage) + '%';
+        document.getElementById('progressBar').style.width = percentage + '%';
+      }
+
+      function endGame() {
+        document.getElementById('spinButton').disabled = true;
+        document.getElementById('multiplier').textContent = 'FIM';
+        document.getElementById('result').querySelector('.result-main').textContent = 'Seu saldo fictício acabou.';
+        document.getElementById('result').querySelector('.result-sub').textContent = 'R$ ' + START_BALANCE.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + ' foram perdidos na simulação.';
+      }
+
+      function resetGame() {
+        balance = START_BALANCE;
+        rounds = 0;
+        lost = 0;
+        biggestLoss = 0;
+        spinning = false;
+
+        document.getElementById('spinButton').disabled = false;
+        document.getElementById('multiplier').textContent = 'x1';
+        document.getElementById('result').querySelector('.result-main').textContent = 'O resultado aparecerá aqui.';
+        document.getElementById('result').querySelector('.result-sub').textContent = 'Nenhuma rodada foi realizada.';
+
+        document.querySelectorAll('.slot').forEach((slot) => slot.classList.remove('missed'));
+
+        document.getElementById('slot0').textContent = '🐆';
+        document.getElementById('slot1').textContent = '💰';
+        document.getElementById('slot2').textContent = '💎';
+        document.getElementById('slot3').textContent = '🍒';
+        document.getElementById('slot4').textContent = '7️⃣';
+        document.getElementById('slot5').textContent = '🔔';
+        document.getElementById('slot6').textContent = '⭐';
+        document.getElementById('slot7').textContent = '🍋';
+        document.getElementById('slot8').textContent = '🐆';
+
+        updateInterface();
+      }
+    </script>
+  </body>
+</html>
